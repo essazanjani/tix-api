@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+class {{ class }}
+{
+    public function __construct()
+    {}
+
+
+    public static function fromRequest(array $data): static
+    {
+        return new static();
+    }
+}
