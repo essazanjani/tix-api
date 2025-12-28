@@ -9,7 +9,7 @@ beforeEach(function () {
     Storage::fake('public');
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
-    $this->endpoint = route('ticket.store');
+    $this->endpoint = route('user.ticket.store');
 });
 
 test('user can store a ticket with attachments', function () {

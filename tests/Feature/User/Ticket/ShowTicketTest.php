@@ -11,7 +11,7 @@ beforeEach(function () {
     $this->user = User::factory()->create();
     $this->admin = User::factory()->create();
     $this->ticket = Ticket::factory()->for($this->user)->create();
-    $this->endpoint = route('ticket.show', $this->ticket);
+    $this->endpoint = route('user.ticket.show', $this->ticket);
 });
 
 
@@ -53,7 +53,7 @@ test('fails if ticket is not parent', function () {
 
     $ticket = Ticket::factory()->reply($this->ticket)->create();
 
-    $response = $this->getJson(route('ticket.show', $ticket));
+    $response = $this->getJson(route('user.ticket.show', $ticket));
 
     expect($response->assertBadRequest())
         ->and($response->json('status'))->toBe('error');

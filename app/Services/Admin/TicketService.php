@@ -1,22 +1,26 @@
 <?php
 
-namespace App\Services\User;
+namespace App\Services\Admin;
 
-use App\DTOs\User\Ticket\ReplyTicketDTO;
-use App\DTOs\User\Ticket\StoreTicketDTO;
+use App\DTOs\Admin\Ticket\ChangeStatusDTO;
+use App\DTOs\Admin\Ticket\ReplyTicketDTO;
 use App\Enums\MediaCollectionEnum;
 use App\Enums\TicketStatusEnum;
 use App\Exceptions\CustomException;
 use App\Models\Ticket;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 
 class TicketService
 {
-    public function index(int $userId): LengthAwarePaginator
+    public function index(): LengthAwarePaginator
     {
         return Ticket::query()
-            ->where('user_id', $userId)
+            ->with('user')
+            ->whereNull('parent_id')
+            ->withCount(['replies as unseen_replies_count' => function ($query) {
+                $query->whereNull('admin_id')
+                    ->whereNull('seen_at');
+            }])
             ->latest()
             ->paginate(10);
     }
@@ -24,31 +28,17 @@ class TicketService
 
     public function show(Ticket $ticket): Ticket
     {
-        if ($ticket->parent_id){
+        if ($ticket->parent_id) {
             throw new CustomException();
         }
 
         Ticket::query()
             ->where('parent_id', $ticket->id)
-            ->whereNotNull('admin_id')
+            ->whereNull('admin_id')
             ->whereNull('seen_at')
             ->update(['seen_at' => now()]);
 
         return $ticket->load(['user.media', 'admin.media', 'media', 'replies.user', 'replies.admin', 'replies.media']);
-    }
-
-
-    public function store(StoreTicketDTO $dto): void
-    {
-        DB::transaction(function () use ($dto) {
-            $ticket = Ticket::query()->create([
-                'user_id' => $dto->user_id,
-                'subject' => $dto->subject,
-                'message' => $dto->message
-            ]);
-
-            $this->uploadAttachments($ticket, $dto->attachments);
-        });
     }
 
 
@@ -62,13 +52,26 @@ class TicketService
             throw new CustomException(trans('base.errors.ticket_closed'));
         }
 
-        Ticket::query()->create([
+        $reply = Ticket::query()->create([
             'user_id' => $ticket->user_id,
+            'admin_id' => $dto->admin_id,
             'parent_id' => $ticket->id,
             'subject' => $ticket->subject,
             'message' => $dto->message,
-            'status' => TicketStatusEnum::PENDING->value
+            'status' => TicketStatusEnum::OPEN->value
         ]);
+
+        $this->uploadAttachments($reply, $dto->attachments);
+    }
+
+
+    public function changeStatus(ChangeStatusDTO $dto, Ticket $ticket): void
+    {
+        if ($ticket->parent_id) {
+            throw new CustomException();
+        }
+
+        $ticket->update(['status' => $dto->status]);
     }
 
 

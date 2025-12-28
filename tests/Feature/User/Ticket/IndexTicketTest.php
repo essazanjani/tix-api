@@ -6,7 +6,7 @@ use App\Models\User;
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
-    $this->endpoint = route('ticket.index');
+    $this->endpoint = route('user.ticket.index');
 });
 
 

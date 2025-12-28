@@ -18,7 +18,7 @@ class RolePermissionSeeder extends Seeder
             'TicketController@index',
             'TicketController@show',
             'TicketController@reply',
-            'TicketController@updateStatus',
+            'TicketController@changeStatus',
             'TicketController@destroy'
         ];
         foreach ($permissions as $permission) {
